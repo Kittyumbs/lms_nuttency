@@ -7,7 +7,7 @@ export interface Ticket {
   priority: string;
   issueType: IssueType;
   createdAt: Date;
-  urls: string[];
+  urls: { url: string }[];
   deadline?: Date;
   status: string;
 }
@@ -17,7 +17,7 @@ export interface TicketFormData {
     description: string;
     priority: string;
     issueType: IssueType;
-    urls: string[];
+    urls: { url: string }[];
     deadline?: Date;
   }
 

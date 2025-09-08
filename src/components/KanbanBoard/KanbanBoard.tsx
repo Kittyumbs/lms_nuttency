@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import "./KanbanBoard.css";
 import {
   DragDropContext,
@@ -33,63 +33,26 @@ import {
 import CreateTicketModal from "./CreateTicketModal";
 import type { TicketFormData } from "./CreateTicketModal";
 import dayjs from 'dayjs';
+import { useKanbanBoard } from "../../hooks/useKanbanBoard"; // Import the hook
+import { IssueType, Ticket } from "../../types/kanban"; // Import types from global definition
 
-// Define Issue Types
-export type IssueType = "Task" | "Bug" | "Story";
+// No longer needed as state is managed by useKanbanBoard and Firestore
+// const saveColumnsToStorage = (columns: Column[]) => {
+//   localStorage.setItem("kanban_columns", JSON.stringify(columns));
+// };
 
-export interface Ticket {
-  id: string;
-  title: string;
-  description: string;
-  priority: string;
-  issueType: IssueType;
-  createdAt: Date;
-  urls: { url: string }[];
-  deadline?: Date;
-  status: string;
-}
-
-interface Column {
-  id: string;
-  title: string;
-  tickets: Ticket[];
-}
-
-const initialColumns: Column[] = [
-  {
-    id: "todo",
-    title: "TO DO",
-    tickets: [],
-  },
-  {
-    id: "inprogress",
-    title: "IN PROGRESS",
-    tickets: [],
-  },
-  {
-    id: "done",
-    title: "DONE",
-    tickets: [],
-  },
-];
-
-// Lưu vào LocalStorage
-const saveColumnsToStorage = (columns: Column[]) => {
-  localStorage.setItem("kanban_columns", JSON.stringify(columns));
-};
-
-// Lấy từ LocalStorage
-const loadColumnsFromStorage = () => {
-  const data = localStorage.getItem("kanban_columns");
-  if (data) {
-    try {
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-};
+// No longer needed as state is managed by useKanbanBoard and Firestore
+// const loadColumnsFromStorage = () => {
+//   const data = localStorage.getItem("kanban_columns");
+//   if (data) {
+//     try {
+//       return JSON.parse(data);
+//     } catch {
+//       return null;
+//     }
+//   }
+//   return null;
+// };
 
 const getIssueTypeIcon = (issueType: IssueType) => {
   switch (issueType) {
@@ -118,12 +81,14 @@ const getPriorityIcon = (priority: string) => {
 };
 
 const KanbanBoard: React.FC = () => {
+  const { columns, addTicket, updateTicket, deleteTicket, moveTicket, handleDragEnd } = useKanbanBoard();
+
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [columns, setColumns] = useState<Column[]>(() => {
-    const stored = loadColumnsFromStorage();
-    return stored || initialColumns;
-  });
+  // const [columns, setColumns] = useState<Column[]>(() => { // Columns state now comes from useKanbanBoard
+  //   const stored = loadColumnsFromStorage();
+  //   return stored || initialColumns;
+  // });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
@@ -137,28 +102,22 @@ const KanbanBoard: React.FC = () => {
   const [movingTicket, setMovingTicket] = useState<string | null>(null);
   const [highlightedColumn, setHighlightedColumn] = useState<string | null>(null);
 
-  useEffect(() => {
-    saveColumnsToStorage(columns);
-  }, [columns]);
+  // useEffect(() => { // No longer needed as state is managed by useKanbanBoard and Firestore
+  //   saveColumnsToStorage(columns);
+  // }, [columns]);
 
-  const onDragEnd = useCallback((result: DropResult) => {
-    const { source, destination } = result;
-    if (!destination) return;
-
-    setColumns(prevColumns => {
-      const newColumns = [...prevColumns];
-      const sourceCol = newColumns.find(col => col.id === source.droppableId);
-      const destCol = newColumns.find(col => col.id === destination.droppableId);
-    
-      if (!sourceCol || !destCol) return prevColumns;
-    
-      const [movedTicket] = sourceCol.tickets.splice(source.index, 1);
-      movedTicket.status = destination.droppableId;
-      destCol.tickets.splice(destination.index, 0, movedTicket);
-    
-      return newColumns;
-    });
-  }, []);
+  const onDragEnd = useCallback(async (result: DropResult) => {
+    setLoadingStates((prev) => ({ ...prev, update: true }));
+    try {
+      await handleDragEnd(result); // Use the handleDragEnd from the hook
+      message.success("Ticket moved successfully!");
+    } catch (error) {
+      console.error("Error moving ticket:", error);
+      message.error("Failed to move ticket");
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, update: false }));
+    }
+  }, [handleDragEnd]);
 
   const getListStyle = (isDraggingOver: boolean) => ({
     background: isDraggingOver ? '#f0f0f0' : 'transparent',
@@ -168,45 +127,26 @@ const KanbanBoard: React.FC = () => {
     transition: 'background-color 0.2s ease'
   });
 
-  const generateUniqueTaskId = useCallback((existingIds: string[]): string => {
-    const generateId = (): string => {
-      const timestamp = Date.now();
-      const randomNum = Math.floor(Math.random() * 1000);
-      const id = `${timestamp % 10000}${randomNum.toString().padStart(3, '0')}`.slice(0, 4);
-      return `ID Task: ${id}`;
-    };
+  // generateUniqueTaskId is no longer needed as Firestore generates IDs
+  // const generateUniqueTaskId = useCallback((existingIds: string[]): string => {
+  //   const generateId = (): string => {
+  //     const timestamp = Date.now();
+  //     const randomNum = Math.floor(Math.random() * 1000);
+  //     const id = `${timestamp % 10000}${randomNum.toString().padStart(3, '0')}`.slice(0, 4);
+  //     return `ID Task: ${id}`;
+  //   };
 
-    let newId = generateId();
-    while (existingIds.includes(newId)) {
-      newId = generateId();
-    }
-    return newId;
-  }, []);
+  //   let newId = generateId();
+  //   while (existingIds.includes(newId)) {
+  //     newId = generateId();
+  //   }
+  //   return newId;
+  // }, []);
 
-  const handleCreateTicket = useCallback((ticketData: TicketFormData) => {
+  const handleCreateTicket = useCallback(async (ticketData: TicketFormData) => {
     setLoadingStates((prev) => ({ ...prev, create: true }));
     try {
-      const existingIds = columns.flatMap(col => col.tickets.map(t => t.id));
-      const newId = generateUniqueTaskId(existingIds);
-  
-      const newTicket: Ticket = {
-        ...ticketData,
-        id: newId,
-        createdAt: new Date(),
-        urls: ticketData.urls || [],
-        deadline: ticketData.deadline ? new Date(ticketData.deadline) : undefined,
-        status: "todo",
-        issueType: ticketData.issueType as IssueType,
-      };
-  
-      setColumns(prevColumns => 
-        prevColumns.map(column => 
-          column.id === "todo"
-            ? { ...column, tickets: [...column.tickets, newTicket] }
-            : column
-        )
-      );
-  
+      await addTicket(ticketData); // Use addTicket from the hook
       setIsCreateModalOpen(false);
       message.success("Ticket created successfully!");
     } catch (error) {
@@ -215,28 +155,15 @@ const KanbanBoard: React.FC = () => {
     } finally {
       setLoadingStates((prev) => ({ ...prev, create: false }));
     }
-  }, [columns, generateUniqueTaskId]);
+  }, [addTicket]);
 
-  const handleUpdateTicket = useCallback((updatedTicketData: TicketFormData) => {
+  const handleUpdateTicket = useCallback(async (updatedTicketData: TicketFormData) => {
     if (!editingTicket) return;
   
     setLoadingStates(prev => ({ ...prev, update: true }));
   
     try {
-      const updatedTicket: Ticket = {
-        ...editingTicket,
-        ...updatedTicketData,
-        deadline: updatedTicketData.deadline ? new Date(updatedTicketData.deadline) : undefined,
-        issueType: updatedTicketData.issueType as IssueType,
-      };
-  
-      setColumns(prevColumns => prevColumns.map(column => ({
-        ...column,
-        tickets: column.tickets.map(ticket =>
-          ticket.id === updatedTicket.id ? updatedTicket : ticket
-        ),
-      })));
-  
+      await updateTicket(editingTicket.id, updatedTicketData); // Use updateTicket from the hook
       setIsEditModalOpen(false);
       setEditingTicket(null);
       message.success("Ticket updated successfully");
@@ -246,7 +173,7 @@ const KanbanBoard: React.FC = () => {
     } finally {
       setLoadingStates(prev => ({ ...prev, update: false }));
     }
-  }, [editingTicket]);
+  }, [editingTicket, updateTicket]);
 
   const handleOpenEditModal = useCallback((ticket: Ticket) => {
     setEditingTicket({
@@ -265,63 +192,58 @@ const KanbanBoard: React.FC = () => {
       title: "Confirm Delete",
       content: "Are you sure you want to delete this ticket?",
       icon: <ExclamationCircleOutlined />,
-      onOk: () => {
-        setColumns(prevColumns => 
-          prevColumns.map(column => ({
-            ...column,
-            tickets: column.tickets.filter(t => t.id !== ticketId),
-          }))
-        );
-        message.success("Ticket deleted successfully!");
+      onOk: async () => {
+        setLoadingStates(prev => ({ ...prev, delete: true }));
+        try {
+          await deleteTicket(ticketId); // Use deleteTicket from the hook
+          message.success("Ticket deleted successfully!");
+        } catch (error) {
+          console.error("Error deleting ticket:", error);
+          message.error("Failed to delete ticket");
+        } finally {
+          setLoadingStates(prev => ({ ...prev, delete: false }));
+        }
       },
       onCancel: () => {
         message.info("Delete action was cancelled");
       },
     });
-  }, []);
+  }, [deleteTicket]);
 
-  const handleMoveTicket = useCallback((ticketId: string, direction: 'left' | 'right') => {
+  const handleMoveTicket = useCallback(async (ticketId: string, direction: 'left' | 'right') => {
     setMovingTicket(ticketId);
     
-    setColumns(prevColumns => {
-      const currentColumn = prevColumns.find(col => 
-        col.tickets.some(t => t.id === ticketId)
-      );
-      if (!currentColumn) return prevColumns;
+    const currentColumn = columns.find(col => 
+      col.tickets.some(t => t.id === ticketId)
+    );
+    if (!currentColumn) return;
 
-      const statusFlow = ['todo', 'inprogress', 'done'];
-      const currentIndex = statusFlow.indexOf(currentColumn.id);
-      const newIndex = direction === 'right' 
-        ? Math.min(currentIndex + 1, statusFlow.length - 1)
-        : Math.max(currentIndex - 1, 0);
-      const newStatus = statusFlow[newIndex];
+    const statusFlow = ['todo', 'inprogress', 'done'];
+    const currentIndex = statusFlow.indexOf(currentColumn.id);
+    const newIndex = direction === 'right' 
+      ? Math.min(currentIndex + 1, statusFlow.length - 1)
+      : Math.max(currentIndex - 1, 0);
+    const newStatus = statusFlow[newIndex];
 
-      // Highlight target column
-      setHighlightedColumn(newStatus);
-      
-      // Remove highlight after animation
-      setTimeout(() => {
-        setHighlightedColumn(null);
-        setMovingTicket(null);
-      }, 300);
-
-      return prevColumns.map(column => {
-        if (column.id === currentColumn.id) {
-          return {
-            ...column,
-            tickets: column.tickets.filter(t => t.id !== ticketId)
-          };
-        } else if (column.id === newStatus) {
-          const movedTicket = currentColumn.tickets.find(t => t.id === ticketId)!;
-          return {
-            ...column,
-            tickets: [...column.tickets, { ...movedTicket, status: newStatus }]
-          };
-        }
-        return column;
-      });
-    });
-  }, []);
+    // Highlight target column
+    setHighlightedColumn(newStatus);
+    
+    // Remove highlight after animation
+    setTimeout(async () => {
+      setHighlightedColumn(null);
+      setMovingTicket(null);
+      setLoadingStates(prev => ({ ...prev, update: true }));
+      try {
+        await moveTicket(ticketId, newStatus); // Use moveTicket from the hook
+        message.success("Ticket moved successfully!");
+      } catch (error) {
+        console.error("Error moving ticket:", error);
+        message.error("Failed to move ticket");
+      } finally {
+        setLoadingStates(prev => ({ ...prev, update: false }));
+      }
+    }, 300);
+  }, [columns, moveTicket]);
 
   const filterTickets = useCallback((tickets: Ticket[]) => {
     return tickets.filter(ticket => {
