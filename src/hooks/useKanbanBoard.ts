@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Column, Ticket, TicketFormData } from "../types/kanban";
 import { initialColumns } from "../utils/constants";
-import { moveTicketBetweenColumns, reorderColumnsOnDragEnd } from "../utils/columnUtils";
 import { db } from "../firebase";
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
 
@@ -45,7 +44,7 @@ export const useKanbanBoard = () => {
   }, []);
 
   const addTicket = useCallback(async (ticketData: TicketFormData) => {
-    const newId = `TASK-${nextTaskNumber.current}`;
+    // const newId = `TASK-${nextTaskNumber.current}`; // Firestore generates ID
     nextTaskNumber.current++;
 
     const newTicket: Omit<Ticket, "id"> = {
