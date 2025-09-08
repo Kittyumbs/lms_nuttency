@@ -36,23 +36,6 @@ import dayjs from 'dayjs';
 import { useKanbanBoard } from "../../hooks/useKanbanBoard"; // Import the hook
 import { IssueType, Ticket } from "../../types/kanban"; // Import types from global definition
 
-// No longer needed as state is managed by useKanbanBoard and Firestore
-// const saveColumnsToStorage = (columns: Column[]) => {
-//   localStorage.setItem("kanban_columns", JSON.stringify(columns));
-// };
-
-// No longer needed as state is managed by useKanbanBoard and Firestore
-// const loadColumnsFromStorage = () => {
-//   const data = localStorage.getItem("kanban_columns");
-//   if (data) {
-//     try {
-//       return JSON.parse(data);
-//     } catch {
-//       return null;
-//     }
-//   }
-//   return null;
-// };
 
 const getIssueTypeIcon = (issueType: IssueType) => {
   switch (issueType) {

@@ -3,12 +3,13 @@ import { Modal, Form, Input, Select, Button, Space, DatePicker } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { getIssueTypeIcon, getPriorityIcon } from "../../utils/icons";
 import dayjs from "dayjs";
+import { IssueType } from "../../types/kanban"; // Import IssueType from global definition
 
 export interface TicketFormData {
   title: string;
   description: string;
   priority: string;
-  issueType: string;
+  issueType: IssueType; // Use the imported IssueType
   urls: { url: string }[];
   deadline?: Date;
 }
