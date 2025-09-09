@@ -70,10 +70,8 @@ const KanbanBoard: React.FC = () => {
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [personnelFilter, setPersonnelFilter] = useState<string | null>(null); // New state for personnel filter
   const [searchText, setSearchText] = useState("");
-  const [isPersonnelSelectionModalOpen, setIsPersonnelSelectionModalOpen] = useState(false); // New state for personnel selection modal
+  const [activeModal, setActiveModal] = useState<'none' | 'personnel' | 'create' | 'edit'>('none'); // Single state for active modal
   const [selectedPersonnelForNewTicket, setSelectedPersonnelForNewTicket] = useState<string | null>(null); // New state to hold selected personnel
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
 
   const [loadingStates, setLoadingStates] = useState({
@@ -127,13 +125,13 @@ const KanbanBoard: React.FC = () => {
   // }, []);
 
   const handleOpenCreateTicketFlow = useCallback(() => {
-    setIsPersonnelSelectionModalOpen(true);
+    setSelectedPersonnelForNewTicket(null); // Ensure no personnel is pre-selected
+    setActiveModal('personnel'); // Open personnel selection modal
   }, []);
 
   const handlePersonnelSelected = useCallback((personnelName: string) => {
     setSelectedPersonnelForNewTicket(personnelName);
-    setIsPersonnelSelectionModalOpen(false);
-    setIsCreateModalOpen(true); // Open CreateTicketModal after personnel is selected
+    setActiveModal('create'); // Open CreateTicketModal after personnel is selected
   }, []);
 
   const handleCreateTicket = useCallback(async (ticketData: TicketFormData) => {
@@ -144,7 +142,7 @@ const KanbanBoard: React.FC = () => {
     setLoadingStates((prev) => ({ ...prev, create: true }));
     try {
       await addTicket({ ...ticketData, personnel: selectedPersonnelForNewTicket }); // Pass selected personnel
-      setIsCreateModalOpen(false);
+      setActiveModal('none'); // Close all modals
       setSelectedPersonnelForNewTicket(null); // Reset selected personnel
       message.success("Ticket created successfully!");
     } catch (error) {
@@ -155,14 +153,14 @@ const KanbanBoard: React.FC = () => {
     }
   }, [addTicket, selectedPersonnelForNewTicket]);
 
-  const handleUpdateTicket = useCallback(async (updatedTicketData: TicketFormData) => {
+  const handleUpdateTicket = useCallback(async (updatedTicketData: Partial<TicketFormData>) => { // Changed type to Partial<TicketFormData>
     if (!editingTicket) return;
   
     setLoadingStates(prev => ({ ...prev, update: true }));
   
     try {
       await updateTicket(editingTicket.id, updatedTicketData); // Use updateTicket from the hook
-      setIsEditModalOpen(false);
+      setActiveModal('none'); // Close all modals after update
       setEditingTicket(null);
       message.success("Ticket updated successfully");
     } catch (error) {
@@ -177,11 +175,11 @@ const KanbanBoard: React.FC = () => {
     setEditingTicket({
       ...ticket,
     });
-    setIsEditModalOpen(true);
+    setActiveModal('edit'); // Open edit modal
   }, []);
 
   const handleCloseEditModal = useCallback(() => {
-    setIsEditModalOpen(false);
+    setActiveModal('none'); // Close all modals
     setEditingTicket(null);
   }, []);
 
@@ -266,6 +264,12 @@ const KanbanBoard: React.FC = () => {
     }));
   }, [columns, filterTickets]);
 
+  const personnelFilterOptions = useMemo(() => {
+    return Array.from(new Set(columns.flatMap(col => col.tickets.map(ticket => ticket.personnel))))
+      .filter((name): name is string => typeof name === 'string' && name.trim() !== '')
+      .map(personnelName => ({ value: personnelName, label: personnelName }));
+  }, [columns]);
+
   return (
     <div className="p-4 bg-white h-full flex flex-col">
       {/* Header section */}
@@ -296,11 +300,7 @@ const KanbanBoard: React.FC = () => {
             allowClear
             style={{ width: 200 }}
             onChange={setPersonnelFilter}
-            options={
-              Array.from(new Set(columns.flatMap(col => col.tickets.map(ticket => ticket.personnel))))
-                .filter((name): name is string => Boolean(name)) // Filter out undefined/null values with type guard
-                .map(personnelName => ({ value: personnelName, label: personnelName }))
-            }
+            options={personnelFilterOptions}
           />
         </div>
 
@@ -493,8 +493,8 @@ const KanbanBoard: React.FC = () => {
 
       <CreateTicketModal
         mode="create"
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        isOpen={activeModal === 'create'}
+        onClose={() => setActiveModal('none')}
         onCreateTicket={handleCreateTicket}
         loading={loadingStates.create}
       />
@@ -502,17 +502,17 @@ const KanbanBoard: React.FC = () => {
       {editingTicket && (
         <CreateTicketModal
           mode="edit"
-          isOpen={isEditModalOpen}
+          isOpen={activeModal === 'edit'}
           onClose={handleCloseEditModal}
           initialData={editingTicket}
-        onUpdateTicket={handleUpdateTicket}
-        loading={loadingStates.update}
-      />
+          onUpdateTicket={handleUpdateTicket}
+          loading={loadingStates.update}
+        />
       )}
 
       <PersonnelSelectionModal
-        isOpen={isPersonnelSelectionModalOpen}
-        onClose={() => setIsPersonnelSelectionModalOpen(false)}
+        isOpen={activeModal === 'personnel'}
+        onClose={() => setActiveModal('none')}
         onSelectPersonnel={handlePersonnelSelected}
       />
     </div>
