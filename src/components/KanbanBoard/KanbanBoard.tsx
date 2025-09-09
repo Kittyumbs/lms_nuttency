@@ -304,10 +304,11 @@ const KanbanBoard: React.FC = () => {
           />
         </div>
 
+        {/* Open personnel selection modal first */}
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={handleOpenCreateTicketFlow} {/* Open personnel selection modal first */}
+          onClick={handleOpenCreateTicketFlow}
           loading={loadingStates.create}
           disabled={loadingStates.create}
         >
