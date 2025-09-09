@@ -47,7 +47,8 @@ const PersonnelSelectionModal: React.FC<PersonnelSelectionModalProps> = ({
   const handleConfirmSelection = () => {
     if (selectedPersonnel) {
       onSelectPersonnel(selectedPersonnel);
-      onClose();
+      // onClose() is removed here. The parent component (KanbanBoard) will handle closing this modal
+      // by setting activeModal to 'create', which implicitly closes the 'personnel' modal.
     } else {
       message.warning("Please select personnel.");
     }
