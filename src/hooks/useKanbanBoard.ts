@@ -23,6 +23,7 @@ export const useKanbanBoard = () => {
           createdAt: data.createdAt.toDate(),
           urls: data.urls || [],
           deadline: data.deadline ? data.deadline.toDate() : undefined,
+          personnel: data.personnel || undefined, // Include personnel field
         };
       });
 
@@ -53,6 +54,7 @@ export const useKanbanBoard = () => {
       urls: ticketData.urls || [],
       deadline: ticketData.deadline ? new Date(ticketData.deadline) : undefined,
       status: "todo",
+      personnel: ticketData.personnel || undefined, // Include personnel field
     };
 
     await addDoc(collection(db, "tickets"), newTicket);

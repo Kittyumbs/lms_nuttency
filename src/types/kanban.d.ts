@@ -10,11 +10,13 @@ export interface Ticket {
   urls: { url: string }[];
   deadline?: Date;
   status: string;
+  personnel?: string; // New field for implementation personnel
 }
 
 export interface TicketFormData {
     title: string;
     description: string;
+    personnel?: string; // New field for implementation personnel
     priority: string;
     issueType: IssueType;
     urls: { url: string }[];

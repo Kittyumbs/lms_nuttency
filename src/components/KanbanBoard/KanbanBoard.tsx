@@ -35,6 +35,7 @@ import type { TicketFormData } from "./CreateTicketModal";
 import dayjs from 'dayjs';
 import { useKanbanBoard } from "../../hooks/useKanbanBoard"; // Import the hook
 import { IssueType, Ticket } from "../../types/kanban"; // Import types from global definition
+import PersonnelSelectionModal from "./PersonnelSelectionModal"; // Import PersonnelSelectionModal
 
 
 const getIssueTypeIcon = (issueType: IssueType) => {
@@ -67,11 +68,10 @@ const KanbanBoard: React.FC = () => {
   const { columns, addTicket, updateTicket, deleteTicket, moveTicket, handleDragEnd } = useKanbanBoard();
 
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+  const [personnelFilter, setPersonnelFilter] = useState<string | null>(null); // New state for personnel filter
   const [searchText, setSearchText] = useState("");
-  // const [columns, setColumns] = useState<Column[]>(() => { // Columns state now comes from useKanbanBoard
-  //   const stored = loadColumnsFromStorage();
-  //   return stored || initialColumns;
-  // });
+  const [isPersonnelSelectionModalOpen, setIsPersonnelSelectionModalOpen] = useState(false); // New state for personnel selection modal
+  const [selectedPersonnelForNewTicket, setSelectedPersonnelForNewTicket] = useState<string | null>(null); // New state to hold selected personnel
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
@@ -126,11 +126,26 @@ const KanbanBoard: React.FC = () => {
   //   return newId;
   // }, []);
 
+  const handleOpenCreateTicketFlow = useCallback(() => {
+    setIsPersonnelSelectionModalOpen(true);
+  }, []);
+
+  const handlePersonnelSelected = useCallback((personnelName: string) => {
+    setSelectedPersonnelForNewTicket(personnelName);
+    setIsPersonnelSelectionModalOpen(false);
+    setIsCreateModalOpen(true); // Open CreateTicketModal after personnel is selected
+  }, []);
+
   const handleCreateTicket = useCallback(async (ticketData: TicketFormData) => {
+    if (!selectedPersonnelForNewTicket) {
+      message.error("Personnel not selected.");
+      return;
+    }
     setLoadingStates((prev) => ({ ...prev, create: true }));
     try {
-      await addTicket(ticketData); // Use addTicket from the hook
+      await addTicket({ ...ticketData, personnel: selectedPersonnelForNewTicket }); // Pass selected personnel
       setIsCreateModalOpen(false);
+      setSelectedPersonnelForNewTicket(null); // Reset selected personnel
       message.success("Ticket created successfully!");
     } catch (error) {
       console.error("Error creating ticket:", error);
@@ -138,7 +153,7 @@ const KanbanBoard: React.FC = () => {
     } finally {
       setLoadingStates((prev) => ({ ...prev, create: false }));
     }
-  }, [addTicket]);
+  }, [addTicket, selectedPersonnelForNewTicket]);
 
   const handleUpdateTicket = useCallback(async (updatedTicketData: TicketFormData) => {
     if (!editingTicket) return;
@@ -231,16 +246,18 @@ const KanbanBoard: React.FC = () => {
   const filterTickets = useCallback((tickets: Ticket[]) => {
     return tickets.filter(ticket => {
       if (priorityFilter && ticket.priority !== priorityFilter) return false;
+      if (personnelFilter && ticket.personnel !== personnelFilter) return false; // New filter for personnel
       if (searchText) {
         const searchLower = searchText.toLowerCase();
         return (
           ticket.title?.toLowerCase().includes(searchLower) || 
-          ticket.description?.toLowerCase().includes(searchLower)
+          ticket.description?.toLowerCase().includes(searchLower) ||
+          ticket.personnel?.toLowerCase().includes(searchLower) // Search by personnel name
         );
       }
       return true;
     });
-  }, [priorityFilter, searchText]);
+  }, [priorityFilter, personnelFilter, searchText]); // Add personnelFilter to dependencies
 
   const filteredColumns = useMemo(() => {
     return columns.map(column => ({
@@ -272,12 +289,25 @@ const KanbanBoard: React.FC = () => {
               { value: "high", label: <span style={{ color: '#ff4d4f' }}>🔴 High</span> },
             ]}
           />
+
+          {/* New filter for Implementation Personnel */}
+          <Select
+            placeholder="Filter by personnel"
+            allowClear
+            style={{ width: 200 }}
+            onChange={setPersonnelFilter}
+            options={
+              Array.from(new Set(columns.flatMap(col => col.tickets.map(ticket => ticket.personnel))))
+                .filter((name): name is string => Boolean(name)) // Filter out undefined/null values with type guard
+                .map(personnelName => ({ value: personnelName, label: personnelName }))
+            }
+          />
         </div>
 
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={handleOpenCreateTicketFlow} {/* Open personnel selection modal first */}
           loading={loadingStates.create}
           disabled={loadingStates.create}
         >
@@ -401,6 +431,12 @@ const KanbanBoard: React.FC = () => {
                                       </div>
                                     )}
                                   </div>
+                                  {/* Display Implementation Personnel */}
+                                  {ticket.personnel && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      Personnel: {ticket.personnel}
+                                    </div>
+                                  )}
                                   <Avatar
                                     size={24}
                                     icon={<UserOutlined />}
@@ -469,10 +505,16 @@ const KanbanBoard: React.FC = () => {
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           initialData={editingTicket}
-          onUpdateTicket={handleUpdateTicket}
-          loading={loadingStates.update}
-        />
+        onUpdateTicket={handleUpdateTicket}
+        loading={loadingStates.update}
+      />
       )}
+
+      <PersonnelSelectionModal
+        isOpen={isPersonnelSelectionModalOpen}
+        onClose={() => setIsPersonnelSelectionModalOpen(false)}
+        onSelectPersonnel={handlePersonnelSelected}
+      />
     </div>
   );
 };
