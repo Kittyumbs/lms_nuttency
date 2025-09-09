@@ -264,9 +264,11 @@ const KanbanBoard: React.FC = () => {
     }));
   }, [columns, filterTickets]);
 
-  const personnelFilterOptions = useMemo(() => {
-    return Array.from(new Set(columns.flatMap(col => col.tickets.map(ticket => ticket.personnel))))
-      .filter((name): name is string => typeof name === 'string' && name.trim() !== '')
+  const personnelFilterOptions: { value: string; label: string }[] = useMemo(() => {
+    const allPersonnel = columns.flatMap(col => col.tickets.map(ticket => ticket.personnel));
+    const uniquePersonnel = Array.from(new Set(allPersonnel));
+    return uniquePersonnel
+      .filter((name): name is string => typeof name === 'string' && name !== '') // Simplified filter
       .map(personnelName => ({ value: personnelName, label: personnelName }));
   }, [columns]);
 
