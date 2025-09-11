@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Column, Ticket, TicketFormData } from "../types/kanban";
 import { initialColumns } from "../utils/constants";
 import { db } from "../firebase";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDocs, where, documentId } from "firebase/firestore"; // Import setDoc, getDocs, where, and documentId
+import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDocs, where, documentId } from "firebase/firestore"; // Removed addDoc
 
 export const useKanbanBoard = () => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
