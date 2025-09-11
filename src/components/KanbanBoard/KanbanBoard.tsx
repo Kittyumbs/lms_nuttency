@@ -417,20 +417,28 @@ const KanbanBoard: React.FC = () => {
                                   <div className="icon-wrapper">
                                     {getIssueTypeIcon(ticket.issueType)}
                                     {getPriorityIcon(ticket.priority)}
-                                    {ticket.deadline && (
+                                    {ticket.status === 'done' && ticket.completedAt ? (
                                       <div className="mt-2">
-                                        <Tag
-                                          color={
-                                            dayjs(ticket.deadline).startOf('day').isBefore(dayjs().startOf('day')) 
-                                              ? '#cc0000'
-                                              : dayjs(ticket.deadline).startOf('day').isSame(dayjs().startOf('day'))
-                                              ? 'red'
-                                              : 'green'
-                                          }
-                                        >
-                                          Deadline: {dayjs(ticket.deadline).format("YYYY-MM-DD")}
+                                        <Tag color="green">
+                                          Complete: {dayjs(ticket.completedAt).format("YYYY-MM-DD")}
                                         </Tag>
                                       </div>
+                                    ) : (
+                                      ticket.deadline && (
+                                        <div className="mt-2">
+                                          <Tag
+                                            color={
+                                              dayjs(ticket.deadline).startOf('day').isBefore(dayjs().startOf('day')) 
+                                                ? '#cc0000'
+                                                : dayjs(ticket.deadline).startOf('day').isSame(dayjs().startOf('day'))
+                                                ? 'red'
+                                                : 'green'
+                                            }
+                                          >
+                                            Deadline: {dayjs(ticket.deadline).format("YYYY-MM-DD")}
+                                          </Tag>
+                                        </div>
+                                      )
                                     )}
                                   </div>
                                   {/* Display Implementation Personnel */}

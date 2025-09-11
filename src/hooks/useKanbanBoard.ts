@@ -24,6 +24,7 @@ export const useKanbanBoard = () => {
           urls: data.urls || [],
           deadline: data.deadline ? data.deadline.toDate() : undefined,
           personnel: data.personnel || undefined, // Include personnel field
+          completedAt: data.completedAt ? data.completedAt.toDate() : undefined, // Include completedAt field
         };
       });
 
@@ -92,7 +93,15 @@ export const useKanbanBoard = () => {
 
   const moveTicket = useCallback(async (ticketId: string, newStatus: string) => {
     const ticketRef = doc(db, "tickets", ticketId);
-    await updateDoc(ticketRef, { status: newStatus });
+    const updateData: Partial<Ticket> = { status: newStatus };
+
+    if (newStatus === "done") {
+      updateData.completedAt = new Date();
+    } else {
+      updateData.completedAt = undefined; // Clear completedAt if moved out of 'done'
+    }
+
+    await updateDoc(ticketRef, updateData);
   }, []);
 
   const handleDragEnd = useCallback(async (result: any) => {

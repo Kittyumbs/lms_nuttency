@@ -11,6 +11,7 @@ export interface Ticket {
   deadline?: Date;
   status: string;
   personnel?: string; // New field for implementation personnel
+  completedAt?: Date; // New field to store completion timestamp
 }
 
 export interface TicketFormData {
