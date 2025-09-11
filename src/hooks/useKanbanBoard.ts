@@ -2,8 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Column, Ticket, TicketFormData } from "../types/kanban";
 import { initialColumns } from "../utils/constants";
 import { db } from "../firebase";
-import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDocs, where, documentId } from "firebase/firestore"; // Removed addDoc
-
+import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDocs, where, documentId, deleteField, serverTimestamp, type UpdateData } from "firebase/firestore"; // Import deleteField
 export const useKanbanBoard = () => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
   const existingTicketIds = useRef<Set<string>>(new Set()); // Store existing 5-digit IDs
@@ -91,17 +90,17 @@ export const useKanbanBoard = () => {
     await deleteDoc(ticketRef);
   }, []);
 
-  const moveTicket = useCallback(async (ticketId: string, newStatus: string) => {
-    const ticketRef = doc(db, "tickets", ticketId);
-    const updateData: Partial<Ticket> = { status: newStatus };
+  const moveTicket = useCallback(async (ticketId: string, newStatus: Ticket['status']) => {
+    const ref = doc(db, 'tickets', ticketId);
 
-    if (newStatus === "done") {
-      updateData.completedAt = new Date();
-    } else {
-      updateData.completedAt = undefined; // Clear completedAt if moved out of 'done'
-    }
+    const base: UpdateData<Ticket> = { status: newStatus };
 
-    await updateDoc(ticketRef, updateData);
+    const patch: UpdateData<Ticket> =
+      newStatus === 'done'
+        ? { ...base, completedAt: serverTimestamp() }
+        : { ...base, completedAt: deleteField() };
+
+    await updateDoc(ref, patch);
   }, []);
 
   const handleDragEnd = useCallback(async (result: any) => {
