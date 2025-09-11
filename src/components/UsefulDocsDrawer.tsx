@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Drawer, Form, Input, List, Avatar, Space, App, Popconfirm } from 'antd';
+import { Button, Drawer, Form, Input, List, Avatar, Space, Popconfirm, message } from 'antd';
 import { PlusOutlined, LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   collection,
@@ -41,7 +41,7 @@ function toHostname(url: string) {
 }
 
 export default function UsefulDocsDrawer() {
-  const { message } = App.useApp();
+  const [messageApi, contextHolder] = message.useMessage();
   const [open, setOpen] = useState(false);
   const [links, setLinks] = useState<ResourceLink[]>([]);
   const [loading, setLoading] = useState(false);
@@ -88,9 +88,9 @@ export default function UsefulDocsDrawer() {
 
       await addDoc(collection(db, 'usefulLinks'), docData);
       form.resetFields();
-      message.success('Đã thêm liên kết');
+      messageApi.success('Đã thêm liên kết');
     } catch (err: any) {
-      message.error(err?.message || 'Không thể thêm liên kết');
+      messageApi.error(err?.message || 'Không thể thêm liên kết');
     } finally {
       setLoading(false);
     }
@@ -100,9 +100,9 @@ export default function UsefulDocsDrawer() {
     if (!id) return;
     try {
       await deleteDoc(doc(db, 'usefulLinks', id));
-      message.success('Đã xoá');
+      messageApi.success('Đã xoá');
     } catch (err: any) {
-      message.error(err?.message || 'Không thể xoá');
+      messageApi.error(err?.message || 'Không thể xoá');
     }
   };
 
@@ -114,6 +114,7 @@ export default function UsefulDocsDrawer() {
 
   return (
     <>
+      {contextHolder}
       <Button
         type="primary"
         icon={<PlusOutlined />}
