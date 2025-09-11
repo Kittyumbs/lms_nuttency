@@ -92,7 +92,6 @@ export default function UsefulDocsDrawer() {
       const userTitle = userTitleRaw && userTitleRaw.length > 0 ? userTitleRaw : undefined;
 
       // basic URL check
-      // Form already validates, but double-check:
       new URL(url);
 
       const faviconUrl = toFavicon(url); // may be undefined
@@ -139,19 +138,6 @@ export default function UsefulDocsDrawer() {
   return (
     <>
       {contextHolder}
-      {/* PILL FILTERS */}
-      <div style={{ marginBottom: 12 }}>
-        <Segmented
-          value={filterDomain}
-          onChange={(v) => setFilterDomain(String(v))}
-          options={[
-            { label: 'Tất cả', value: 'ALL' },
-            ...domainOptions.map(d => ({ label: d, value: d })),
-          ]}
-          size="large"
-        />
-      </div>
-
       <Button
         type="primary"
         icon={<PlusOutlined />}
@@ -208,6 +194,18 @@ export default function UsefulDocsDrawer() {
 
         <div style={{ marginTop: 24 }} />
 
+        {/* PILL FILTERS */}
+        <div style={{ marginBottom: 12 }}>
+          <Segmented
+            value={filterDomain}
+            onChange={(v) => setFilterDomain(String(v))}
+            options={[
+              { label: 'Tất cả', value: 'ALL' },
+              ...domainOptions.map(d => ({ label: d, value: d })),
+            ]}
+            size="large"
+          />
+        </div>
         <List
           itemLayout="horizontal"
           dataSource={filteredLinks}
