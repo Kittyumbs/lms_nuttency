@@ -36,6 +36,7 @@ import dayjs from 'dayjs';
 import { useKanbanBoard } from "../../hooks/useKanbanBoard"; // Import the hook
 import { IssueType, Ticket } from "../../types/kanban"; // Import types from global definition
 import PersonnelSelectionModal from "./PersonnelSelectionModal"; // Import PersonnelSelectionModal
+import UsefulDocsDrawer from "../UsefulDocsDrawer"; // Import UsefulDocsDrawer
 
 
 const getIssueTypeIcon = (issueType: IssueType) => {
@@ -306,16 +307,19 @@ const KanbanBoard: React.FC = () => {
           />
         </div>
 
-        {/* Open personnel selection modal first */}
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleOpenCreateTicketFlow}
-          loading={loadingStates.create}
-          disabled={loadingStates.create}
-        >
-          Add Ticket
-        </Button>
+        <div className="flex gap-2">
+          <UsefulDocsDrawer /> {/* Add the UsefulDocsDrawer component here */}
+          {/* Open personnel selection modal first */}
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={handleOpenCreateTicketFlow}
+            loading={loadingStates.create}
+            disabled={loadingStates.create}
+          >
+            Add Ticket
+          </Button>
+        </div>
       </div>
 
       {/* Main board content */}
