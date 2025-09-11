@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Drawer, Form, Input, List, Avatar, Space, Popconfirm, message } from 'antd';
+import { Button, Drawer, Form, Input, List, Avatar, Space, Popconfirm, message, Segmented } from 'antd';
 import { PlusOutlined, LinkOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   collection,
@@ -19,6 +19,7 @@ type ResourceLink = {
   userTitle?: string;
   pageTitle?: string;
   faviconUrl?: string;
+  domain?: string;
   createdAt?: any;
   updatedAt?: any;
 };
@@ -44,6 +45,7 @@ export default function UsefulDocsDrawer() {
   const [messageApi, contextHolder] = message.useMessage();
   const [open, setOpen] = useState(false);
   const [links, setLinks] = useState<ResourceLink[]>([]);
+  const [filterDomain, setFilterDomain] = useState<string>('ALL');
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
@@ -66,6 +68,21 @@ export default function UsefulDocsDrawer() {
     item.pageTitle?.trim() ||
     toHostname(item.url);
 
+  const getDomain = (item: ResourceLink) => item.domain || toHostname(item.url);
+
+  // domains pills (dynamic from data)
+  const domainOptions = React.useMemo(() => {
+    const set = new Set<string>();
+    links.forEach(l => set.add(getDomain(l)));
+    return Array.from(set).sort();
+  }, [links]);
+
+  // filtered list
+  const filteredLinks = React.useMemo(() => {
+    if (filterDomain === 'ALL') return links;
+    return links.filter(l => getDomain(l) === filterDomain);
+  }, [links, filterDomain]);
+
   const onAdd = async () => {
     try {
       setLoading(true);
@@ -80,10 +97,12 @@ export default function UsefulDocsDrawer() {
 
       const faviconUrl = toFavicon(url); // may be undefined
       const pageTitle = ''; // optional for now
+      const domain = new URL(url).hostname;
 
       // Build payload WITHOUT any undefined fields
       const docData: Omit<ResourceLink, 'id'> = {
         url,
+        domain,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         ...(userTitle ? { userTitle } : {}),
@@ -120,6 +139,19 @@ export default function UsefulDocsDrawer() {
   return (
     <>
       {contextHolder}
+      {/* PILL FILTERS */}
+      <div style={{ marginBottom: 12 }}>
+        <Segmented
+          value={filterDomain}
+          onChange={(v) => setFilterDomain(String(v))}
+          options={[
+            { label: 'Tất cả', value: 'ALL' },
+            ...domainOptions.map(d => ({ label: d, value: d })),
+          ]}
+          size="large"
+        />
+      </div>
+
       <Button
         type="primary"
         icon={<PlusOutlined />}
@@ -178,7 +210,7 @@ export default function UsefulDocsDrawer() {
 
         <List
           itemLayout="horizontal"
-          dataSource={links}
+          dataSource={filteredLinks}
           renderItem={(item) => (
             <List.Item
               actions={[
