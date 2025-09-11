@@ -71,19 +71,24 @@ export default function UsefulDocsDrawer() {
       setLoading(true);
       const values = await form.validateFields();
       const url: string = values.url.trim();
-      const userTitle: string | undefined = values.title?.trim() || undefined;
+      const userTitleRaw: string | undefined = values.title?.trim();
+      const userTitle = userTitleRaw && userTitleRaw.length > 0 ? userTitleRaw : undefined;
 
       // basic URL check
       // Form already validates, but double-check:
       new URL(url);
 
+      const faviconUrl = toFavicon(url); // may be undefined
+      const pageTitle = ''; // optional for now
+
+      // Build payload WITHOUT any undefined fields
       const docData: Omit<ResourceLink, 'id'> = {
         url,
-        userTitle,
-        pageTitle: '', // (optional) fill later via backend if needed
-        faviconUrl: toFavicon(url),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
+        ...(userTitle ? { userTitle } : {}),
+        ...(pageTitle ? { pageTitle } : {}),
+        ...(faviconUrl ? { faviconUrl } : {}),
       };
 
       await addDoc(collection(db, 'usefulLinks'), docData);
