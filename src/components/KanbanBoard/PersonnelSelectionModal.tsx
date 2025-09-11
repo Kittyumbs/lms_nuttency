@@ -56,7 +56,7 @@ const PersonnelSelectionModal: React.FC<PersonnelSelectionModalProps> = ({
 
   return (
     <Modal
-      title="Select Implementation Personnel"
+      title="Người thực hiện?"
       open={isOpen}
       onCancel={onClose}
       footer={[
@@ -75,7 +75,7 @@ const PersonnelSelectionModal: React.FC<PersonnelSelectionModalProps> = ({
       width={400}
     >
       <Form form={form} layout="vertical">
-        <Form.Item label="Existing Personnel">
+        <Form.Item label="Chọn người thực hiện">
           <Select
             placeholder="Select personnel"
             loading={loading}
@@ -86,7 +86,7 @@ const PersonnelSelectionModal: React.FC<PersonnelSelectionModalProps> = ({
           />
         </Form.Item>
 
-        <div style={{ textAlign: "center", margin: "10px 0" }}>OR</div>
+        <div style={{ textAlign: "center", margin: "10px 0" }}>Hoặc</div>
 
         {!isAddingNew ? (
           <Button
@@ -95,7 +95,7 @@ const PersonnelSelectionModal: React.FC<PersonnelSelectionModalProps> = ({
             block
             icon={<PlusOutlined />}
           >
-            Add New Personnel
+            Thêm người thực hiện mới
           </Button>
         ) : (
           <Form.Item label="New Personnel Name">
