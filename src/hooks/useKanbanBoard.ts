@@ -2,11 +2,11 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Column, Ticket, TicketFormData } from "../types/kanban";
 import { initialColumns } from "../utils/constants";
 import { db } from "../firebase";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc, getDocs, where, documentId } from "firebase/firestore"; // Import setDoc, getDocs, where, and documentId
 
 export const useKanbanBoard = () => {
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const nextTaskNumber = useRef<number>(1); // Will be updated by Firestore data
+  const existingTicketIds = useRef<Set<string>>(new Set()); // Store existing 5-digit IDs
 
   useEffect(() => {
     const q = query(collection(db, "tickets"), orderBy("createdAt", "asc"));
@@ -33,22 +33,42 @@ export const useKanbanBoard = () => {
       }));
       setColumns(updatedColumns);
 
-      // Update nextTaskNumber based on existing tickets
-      const maxTaskNum = tickets.reduce((max, ticket) => {
-        const match = ticket.id.match(/TASK-(\d+)/);
-        return match ? Math.max(max, parseInt(match[1])) : max;
-      }, 0);
-      nextTaskNumber.current = maxTaskNum + 1;
+      // Update existingTicketIds
+      existingTicketIds.current = new Set(tickets.map(ticket => ticket.id));
     });
 
     return () => unsubscribe();
   }, []);
 
-  const addTicket = useCallback(async (ticketData: TicketFormData) => {
-    // const newId = `TASK-${nextTaskNumber.current}`; // Firestore generates ID
-    nextTaskNumber.current++;
+  // Function to generate a unique 5-digit ID
+  const generateUnique5DigitId = useCallback(async (): Promise<string> => {
+    let newId: string;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 100; // Prevent infinite loops
 
-    const newTicket: Omit<Ticket, "id"> = {
+    while (!isUnique && attempts < maxAttempts) {
+      newId = String(Math.floor(10000 + Math.random() * 90000)); // Generate a random 5-digit number
+      if (!existingTicketIds.current.has(newId)) {
+        // Double-check against Firestore directly to be absolutely sure, especially on initial load
+        const q = query(collection(db, "tickets"), where(documentId(), "==", newId)); // Correct usage of where and documentId
+        const docSnap = await getDocs(q);
+        if (docSnap.empty) {
+          isUnique = true;
+          existingTicketIds.current.add(newId); // Add to local set
+          return newId;
+        }
+      }
+      attempts++;
+    }
+    throw new Error("Failed to generate a unique 5-digit ID after multiple attempts.");
+  }, []);
+
+  const addTicket = useCallback(async (ticketData: TicketFormData) => {
+    const newId = await generateUnique5DigitId(); // Generate custom unique ID
+
+    const newTicket: Ticket = { // Change Omit<Ticket, "id"> to Ticket
+      id: newId, // Assign the custom ID
       ...ticketData,
       createdAt: new Date(),
       urls: ticketData.urls || [],
@@ -57,8 +77,8 @@ export const useKanbanBoard = () => {
       personnel: ticketData.personnel || undefined, // Include personnel field
     };
 
-    await addDoc(collection(db, "tickets"), newTicket);
-  }, []);
+    await setDoc(doc(db, "tickets", newId), newTicket); // Use setDoc with custom ID
+  }, [generateUnique5DigitId]);
 
   const updateTicket = useCallback(async (ticketId: string, updatedData: Partial<Ticket>) => {
     const ticketRef = doc(db, "tickets", ticketId);

@@ -383,8 +383,7 @@ const KanbanBoard: React.FC = () => {
                                   boxShadow: 'none'
                                 }}
                               >
-                                <div className="text-xs text-gray-500 mb-1">
-                                  {ticket.id}
+                                <div className="text-xs text-gray-500 mb-1">ID: {ticket.id}
                                 </div>
                                 <div className="text-sm font-medium mb-2">
                                   {ticket.title}
