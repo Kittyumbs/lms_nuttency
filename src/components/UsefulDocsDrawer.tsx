@@ -68,7 +68,10 @@ export default function UsefulDocsDrawer() {
     item.pageTitle?.trim() ||
     toHostname(item.url);
 
-  const getDomain = (item: ResourceLink) => item.domain || toHostname(item.url);
+  const getDomain = (item: ResourceLink) => {
+    const host = item.domain || toHostname(item.url);
+    return host.split('.')[0];
+  };
 
   // domains pills (dynamic from data)
   const domainOptions = React.useMemo(() => {
