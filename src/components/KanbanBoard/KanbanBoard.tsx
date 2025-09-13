@@ -208,27 +208,17 @@ const KanbanBoard: React.FC = () => {
     });
   }, [deleteTicket]);
 
-  const handleArchiveTicket = useCallback((ticketId: string) => {
-    Modal.confirm({
-      title: "Confirm Archive",
-      content: "Are you sure you want to archive this ticket? It will no longer appear on the board.",
-      icon: <FolderOutlined />,
-      onOk: async () => {
-        setLoadingStates(prev => ({ ...prev, update: true })); // Use update loading state for archive
-        try {
-          await archiveTicket(ticketId);
-          message.success("Ticket archived successfully!");
-        } catch (error) {
-          console.error("Error archiving ticket:", error);
-          message.error("Failed to archive ticket");
-        } finally {
-          setLoadingStates(prev => ({ ...prev, update: false }));
-        }
-      },
-      onCancel: () => {
-        message.info("Archive action was cancelled");
-      },
-    });
+  const handleArchiveTicket = useCallback(async (ticketId: string) => {
+    setLoadingStates(prev => ({ ...prev, update: true })); // Use update loading state for archive
+    try {
+      await archiveTicket(ticketId);
+      message.success("Ticket archived successfully!");
+    } catch (error) {
+      console.error("Error archiving ticket:", error);
+      message.error("Failed to archive ticket");
+    } finally {
+      setLoadingStates(prev => ({ ...prev, update: false }));
+    }
   }, [archiveTicket]);
 
   const handleMoveTicket = useCallback(async (ticketId: string, direction: 'left' | 'right') => {

@@ -11,6 +11,7 @@ export const useKanbanBoard = () => {
     // Query to fetch tickets that are not archived, ordered by creation date
     const q = query(
       collection(db, "tickets"),
+      where("archived", "==", false), // Filter out archived tickets
       orderBy("createdAt", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
