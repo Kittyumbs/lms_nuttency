@@ -11,7 +11,6 @@ export const useKanbanBoard = () => {
     // Query to fetch tickets that are not archived, ordered by creation date
     const q = query(
       collection(db, "tickets"),
-      where("archived", "==", false), // Filter out archived tickets
       orderBy("createdAt", "asc")
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -80,6 +79,7 @@ export const useKanbanBoard = () => {
       deadline: ticketData.deadline ? new Date(ticketData.deadline) : undefined,
       status: "todo",
       personnel: ticketData.personnel || undefined, // Include personnel field
+      archived: false, // New tickets are not archived by default
     };
 
     await setDoc(doc(db, "tickets", newId), newTicket); // Use setDoc with custom ID
