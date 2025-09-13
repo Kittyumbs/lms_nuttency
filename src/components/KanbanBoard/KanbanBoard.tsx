@@ -28,7 +28,8 @@ import {
   DeleteOutlined,
   LeftOutlined,
   RightOutlined,
-  ExclamationCircleOutlined 
+  ExclamationCircleOutlined,
+  FolderOutlined // Import FolderOutlined for archive icon
 } from "@ant-design/icons";
 import CreateTicketModal from "./CreateTicketModal";
 import type { TicketFormData } from "./CreateTicketModal";
@@ -66,7 +67,7 @@ const getPriorityIcon = (priority: string) => {
 };
 
 const KanbanBoard: React.FC = () => {
-  const { columns, addTicket, updateTicket, deleteTicket, moveTicket, handleDragEnd } = useKanbanBoard();
+  const { columns, addTicket, updateTicket, deleteTicket, archiveTicket, moveTicket, handleDragEnd } = useKanbanBoard();
 
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [personnelFilter, setPersonnelFilter] = useState<string | null>(null); // New state for personnel filter
@@ -206,6 +207,29 @@ const KanbanBoard: React.FC = () => {
       },
     });
   }, [deleteTicket]);
+
+  const handleArchiveTicket = useCallback((ticketId: string) => {
+    Modal.confirm({
+      title: "Confirm Archive",
+      content: "Are you sure you want to archive this ticket? It will no longer appear on the board.",
+      icon: <FolderOutlined />,
+      onOk: async () => {
+        setLoadingStates(prev => ({ ...prev, update: true })); // Use update loading state for archive
+        try {
+          await archiveTicket(ticketId);
+          message.success("Ticket archived successfully!");
+        } catch (error) {
+          console.error("Error archiving ticket:", error);
+          message.error("Failed to archive ticket");
+        } finally {
+          setLoadingStates(prev => ({ ...prev, update: false }));
+        }
+      },
+      onCancel: () => {
+        message.info("Archive action was cancelled");
+      },
+    });
+  }, [archiveTicket]);
 
   const handleMoveTicket = useCallback(async (ticketId: string, direction: 'left' | 'right') => {
     setMovingTicket(ticketId);
@@ -457,39 +481,50 @@ const KanbanBoard: React.FC = () => {
                                     className="bg-gray-200"
                                   />
                                 </div>
-                                <div className="action-buttons">
-                                  {column.id !== 'todo' && (
+                                  <div className="action-buttons">
+                                    {column.id !== 'todo' && (
+                                      <Button
+                                        type="text"
+                                        className="action-button"
+                                        icon={<LeftOutlined style={{ fontSize: '16px', color: '#1890ff' }} />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoveTicket(ticket.id, 'left');
+                                        }}
+                                      />
+                                    )}
+                                    {column.id === 'done' && ( // Only show archive button for 'done' tickets
+                                      <Button
+                                        type="text"
+                                        className="action-button archive"
+                                        icon={<FolderOutlined style={{ fontSize: '16px', color: '#faad14' }} />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleArchiveTicket(ticket.id);
+                                        }}
+                                      />
+                                    )}
                                     <Button
                                       type="text"
-                                      className="action-button"
-                                      icon={<LeftOutlined style={{ fontSize: '16px', color: '#1890ff' }} />}
+                                      className="action-button delete"
+                                      icon={<DeleteOutlined style={{ fontSize: '16px', color: '#ff4d4f' }} />}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        handleMoveTicket(ticket.id, 'left');
+                                        handleDeleteTicket(ticket.id);
                                       }}
                                     />
-                                  )}
-                                  <Button
-                                    type="text"
-                                    className="action-button delete"
-                                    icon={<DeleteOutlined style={{ fontSize: '16px', color: '#ff4d4f' }} />}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteTicket(ticket.id);
-                                    }}
-                                  />
-                                  {column.id !== 'done' && (
-                                    <Button
-                                      type="text"
-                                      className="action-button"
-                                      icon={<RightOutlined style={{ fontSize: '16px', color: '#1890ff' }} />}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleMoveTicket(ticket.id, 'right');
-                                      }}
-                                    />
-                                  )}
-                                </div>
+                                    {column.id !== 'done' && (
+                                      <Button
+                                        type="text"
+                                        className="action-button"
+                                        icon={<RightOutlined style={{ fontSize: '16px', color: '#1890ff' }} />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleMoveTicket(ticket.id, 'right');
+                                        }}
+                                      />
+                                    )}
+                                  </div>
                               </Card>
                             </div>
                           )}

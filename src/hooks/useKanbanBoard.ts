@@ -8,7 +8,12 @@ export const useKanbanBoard = () => {
   const existingTicketIds = useRef<Set<string>>(new Set()); // Store existing 5-digit IDs
 
   useEffect(() => {
-    const q = query(collection(db, "tickets"), orderBy("createdAt", "asc"));
+    // Query to fetch tickets that are not archived, ordered by creation date
+    const q = query(
+      collection(db, "tickets"),
+      where("archived", "==", false), // Filter out archived tickets
+      orderBy("createdAt", "asc")
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const tickets: Ticket[] = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -90,6 +95,11 @@ export const useKanbanBoard = () => {
     await deleteDoc(ticketRef);
   }, []);
 
+  const archiveTicket = useCallback(async (ticketId: string) => {
+    const ticketRef = doc(db, "tickets", ticketId);
+    await updateDoc(ticketRef, { archived: true });
+  }, []);
+
   const moveTicket = useCallback(async (ticketId: string, newStatus: Ticket['status']) => {
     const ref = doc(db, 'tickets', ticketId);
 
@@ -123,6 +133,7 @@ export const useKanbanBoard = () => {
     addTicket,
     updateTicket,
     deleteTicket,
+    archiveTicket, // Return the new archiveTicket function
     moveTicket,
     handleDragEnd,
     setColumns, // setColumns is still returned for potential local state manipulation if needed, but primary updates will be via Firestore

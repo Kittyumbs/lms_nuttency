@@ -12,6 +12,7 @@ export interface Ticket {
   status: string;
   personnel?: string; // New field for implementation personnel
   completedAt?: Date; // New field to store completion timestamp
+  archived?: boolean; // New field to mark ticket as archived
 }
 
 export interface TicketFormData {
